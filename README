@@ -1,0 +1,64 @@
+This is a pair of scripts which facilitate VNC desktop sharing using
+x11vnc via an ssh tunnel, allowing sharing through firewalls.
+
+So far this is only an experiment - and tested on Linux only.
+
+Suppose the user wishing to share her desktop is called Alice.  Bob
+wants to view Alice's desktop.  Alice and Bob both have accounts on a
+server they can connect to via ssh (alice@gateway.host and
+bob@gateway.host).  Both local and remote port forwarding is enabled
+on that server.
+
+That server must also have a index directory created, say
+/etc/vnc-gateway, and populated with files named for each user who may
+want to share their desktop.  Each file should contain a unique port
+number for a user for connections to their desktop.
+
+e.g. on gateway.host:
+
+  gateway.host$ mkdir /etc/vnc-gateway
+  gateway.host$ echo 5910 > /etc/vncgateway/alice
+  gateway.host$ echo 5911 > /etc/vncgateway/charlie   # etc.
+
+Alice must have x11vnc installed.  Bob must have vncviewer installed.
+Both put the showdesktop and viewdesktop scripts somewhere they can
+execute them.  This example assumes they're in their shell paths.
+
+Alice creates a ~/vnc-gateway file on her desktop machine like this:
+
+  GATEWAY_LOGIN=alice
+  GATEWAY_HOST=gateway.host
+  GATEWAY_PORT_DIR=/etc/vnc-gateway
+  X11VNC_OPTS='-viewonly -shared' # grant no control; allow many visitors
+
+Bob creates a similar one on his:
+
+  GATEWAY_LOGIN=bob
+  GATEWAY_HOST=gateway.host
+  GATEWAY_PORT_DIR=/etc/vnc-gateway
+  X11VNC_OPTS='-viewonly -shared' # grant no control; allow many visitors
+
+Alice then runs showdesktop:
+
+  alice$ showdesktop 
+
+She will be prompted for her password twice, unless she has set up ssh
+shared key authentication.  x11vnc will run.
+
+Bob can then connect to Alice's desktop like this:
+
+  bob$ viewdesktop alice
+
+If Charlie sets up a ~/.vnc-gateway too, and runs showdesktop, bob can
+view his desktop like this:
+
+  bob$ viewdesktop charlie
+
+Charlie can also view Alice's desktop (simultaneously with Bob, since
+Alice defined the flag -shared in X11VNC_OPTS):
+
+  charlie$ viewdesktop alice
+
+Howver because Alice also defined the -viewonly flag, neither Charlie
+or Bob can only watch what Alice does, and not do anything on her
+desktop themselves.

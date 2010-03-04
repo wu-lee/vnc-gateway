@@ -1,0 +1,5 @@
+
+GATEWAY_LOGIN=<your ssh username here>
+GATEWAY_HOST=<your ssh host here>
+GATEWAY_PORT_DIR=/etc/vnc-gateway # see README
+X11VNC_OPTS='-viewonly -shared' # grant no control; allow many visitors

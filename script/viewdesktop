@@ -1,0 +1,42 @@
+#!/bin/sh
+
+
+# the following shell script should define variables:
+# X11VNC_OPTS - supplemental options to pass to x11vnc
+#               e.g. -shared -viewonly
+# GATEWAY_HOST - a host to use as an ssh network gateway
+# GATEWAY_LOGIN - the login for the gateway 
+# GATEWAY_PORT_DIR - where to get the gateway port file from
+#                    (a directory on the gateway machine)
+. ~/.vnc-gateway
+
+REMOTE_USER=$1
+if [ -z "$REMOTE_USER" ]; then
+  echo >&2 "please supply the name of the user to connect to"
+  exit 1
+fi
+
+GATEWAY=$GATEWAY_LOGIN@$GATEWAY_HOST
+GATEWAY_PORT=`ssh $GATEWAY cat $GATEWAY_PORT_DIR/$REMOTE_USER`
+if [ -z "$GATEWAY_PORT" ]; then
+  echo >&2 "Could not get user port from $GATEWAY:$GATEWAY_PORT_DIR/$GATEWAY_LOGIN"
+  exit 1
+fi
+
+
+VNC_DISPLAY=1
+LOCAL_PORT=`expr $VNC_DISPLAY + 5900`
+
+# Create a tunnel to the gateway
+ssh -N $GATEWAY -L $LOCAL_PORT:localhost:$GATEWAY_PORT & 
+sleep 1
+
+# Now try and connect to the tunneled port
+vncviewer localhost:$VNC_DISPLAY
+
+# Clean up
+# kill nc/ssh
+#kill %1
+echo killing $$
+pkill -P $$
+wait

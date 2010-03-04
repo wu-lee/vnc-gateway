@@ -1,0 +1,29 @@
+#!/bin/sh
+
+# the following shell script should define variables:
+# X11VNC_OPTS - supplemental options to pass to x11vnc
+#               e.g. -shared -viewonly
+# GATEWAY_HOST - a host to use as an ssh network gateway
+# GATEWAY_LOGIN - the login for the gateway 
+# GATEWAY_PORT_DIR - where to get the gateway port file from
+#                    (a directory on the gateway machine)
+. ~/.vnc-gateway
+
+
+GATEWAY=$GATEWAY_LOGIN@$GATEWAY_HOST
+
+# Discover the GATEWAY_PORT
+GATEWAY_PORT=`ssh $GATEWAY cat $GATEWAY_PORT_DIR/$GATEWAY_LOGIN`
+if [ -z "$GATEWAY_PORT" ]; then
+  echo >&2 "Could not get user port from $GATEWAY:$GATEWAY_PORT_DIR/$GATEWAY_LOGIN"
+  exit 1
+fi
+
+# Start x11vnc and capture the port number it's listening on
+eval `x11vnc -bg -localhost -forever $X11VNC_OPTS | grep 'PORT=' ` # sets the PORT variable
+
+# Create a tunnel from the gateway to this port
+ssh  -N $GATEWAY -R $GATEWAY_PORT:localhost:$PORT
+
+# Clean up
+pkill x11vnc
